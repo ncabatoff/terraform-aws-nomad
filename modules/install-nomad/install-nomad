@@ -9,6 +9,7 @@ set -e
 
 readonly DEFAULT_INSTALL_PATH="/opt/nomad"
 readonly DEFAULT_NOMAD_USER="nomad"
+readonly DEFAULT_ARCH="linux_amd64"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SYSTEM_BIN_DIR="/usr/local/bin"
@@ -29,6 +30,7 @@ function print_usage {
   echo -e "  --version\t\tThe version of Nomad to install. Required."
   echo -e "  --path\t\tThe path where Nomad should be installed. Optional. Default: $DEFAULT_INSTALL_PATH."
   echo -e "  --user\t\tThe user who will own the Nomad install directories. Optional. Default: $DEFAULT_NOMAD_USER."
+  echo -e "  --arch\t\tThe arch for the binary. Optional. Default: $DEFAULT_ARCH."
   echo
   echo "Example:"
   echo
@@ -163,8 +165,9 @@ function install_binaries {
   local readonly version="$1"
   local readonly path="$2"
   local readonly username="$3"
+  local readonly arch="$4"
 
-  local readonly url="https://releases.hashicorp.com/nomad/${version}/nomad_${version}_linux_amd64.zip"
+  local readonly url="https://releases.hashicorp.com/nomad/${version}/nomad_${version}_${arch}.zip"
   local readonly download_path="/tmp/nomad_${version}_linux_amd64.zip"
   local readonly bin_dir="$path/bin"
   local readonly nomad_dest_path="$bin_dir/nomad"
@@ -197,6 +200,7 @@ function install {
   local version=""
   local path="$DEFAULT_INSTALL_PATH"
   local user="$DEFAULT_NOMAD_USER"
+  local arch="$DEFAULT_ARCH"
 
   while [[ $# > 0 ]]; do
     local key="$1"
@@ -212,6 +216,10 @@ function install {
         ;;
       --user)
         user="$2"
+        shift
+        ;;
+      --arch)
+        arch="$2"
         shift
         ;;
       --help)
@@ -231,13 +239,14 @@ function install {
   assert_not_empty "--version" "$version"
   assert_not_empty "--path" "$path"
   assert_not_empty "--user" "$user"
+  assert_not_empty "--arch" "$arch"
 
   log_info "Starting Nomad install"
 
   install_dependencies
   create_nomad_user "$user"
   create_nomad_install_paths "$path" "$user"
-  install_binaries "$version" "$path" "$user"
+  install_binaries "$version" "$path" "$user" "$arch"
 
   log_info "Nomad install complete!"
 }
